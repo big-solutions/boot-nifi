@@ -2,8 +2,10 @@
   "Example tasks showing various approaches."
   {:boot/export-tasks true}
   (:require [boot.core :as boot :refer [deftask]]
+            [boot.task.built-in :refer [sift]]
             [clojure.java.io :as io]
             [clojure.string :as string]
+            [boot-mvn.core :refer [mvn]]
             [boot.util :as util]))
 
 (defn str-replace
@@ -16,15 +18,15 @@
             template
             (into [] m))))
 
-(deftask nar
- "Create nar file"
+(deftask nar-pom
+ "Create nar pom.xml"
  [P project PROJECT sym "project id (eg. foo/bar)"
   V version VERSION str "project version"]
 
  (if-not project
-   (do (boot.util/fail "The P/project option is required!") (*usage*)))
+   (do (util/fail "The P/project option is required!") (*usage*)))
  (if-not version
-   (do (boot.util/fail "The V/version option is required!") (*usage*)))
+   (do (util/fail "The V/version option is required!") (*usage*)))
 
  (let [tmp (boot/tmp-dir!)
        id (name project)
@@ -43,7 +45,27 @@
                                              :id      id
                                              :version version}))
              nar-pom-file (io/file tmp "pom.xml")]
-         (spit nar-pom-file nar-pom-contents))
+         (spit nar-pom-file nar-pom-contents)
+
        (next-handler (-> fileset
                          (boot/add-resource tmp)
-                         boot/commit!))))))
+                         boot/commit!)))))))
+
+(deftask nar
+ "Builds a nar file"
+ [P project PROJECT sym "project id (eg. foo/bar)"
+  V version VERSION str "project version"]
+
+ (if-not project
+   (do (util/fail "The P/project option is required!") (*usage*)))
+ (if-not version
+   (do (util/fail "The V/version option is required!") (*usage*)))
+
+ (let [id (name project)
+       nar-path (str id "-nar-" version ".nar")]
+   (comp (nar-pom :project project :version version)
+         (mvn :version "3.1.1"
+              :args (str "package install"))
+         (sift :move {(re-pattern (str "target/" nar-path))
+                      nar-path}
+               :include #{(re-pattern nar-path)}))))

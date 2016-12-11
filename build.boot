@@ -3,6 +3,7 @@
 
 (set-env! :source-paths #{"resources" "src"}
           :dependencies   '[[org.clojure/clojure "1.7.0"]
+                            [big-solutions/boot-mvn "0.1.4"]
                             [boot/core "2.6.0" :scope "test"]
                             [onetom/boot-lein-generate "0.1.3" :scope "test"]])
 
@@ -20,7 +21,7 @@
   []
   (comp (pom) (jar) (install)))
 
-(require '[boot-nifi.core :refer [nar]])
+(require '[boot-nifi.core :refer [nar-pom nar]])
 
 (deftask idea
          "Updates project.clj for Idea to pick up dependency changes."
