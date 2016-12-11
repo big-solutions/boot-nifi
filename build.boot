@@ -1,7 +1,8 @@
 (def project 'big-solutions/boot-nifi)
-(def version "0.1.0-SNAPSHOT")
+(def version "0.1.1-SNAPSHOT")
 
-(set-env! :source-paths #{"resources" "src"}
+(set-env! :source-paths #{"src"}
+          :resource-paths #{"resources"}
           :dependencies   '[[org.clojure/clojure "1.7.0"]
                             [big-solutions/boot-mvn "0.1.4"]
                             [boot/core "2.6.0" :scope "test"]
@@ -17,9 +18,10 @@
                     "http://www.eclipse.org/legal/epl-v10.html"}})
 
 (deftask build
-  "Build and install the project locally."
-  []
-  (comp (pom) (jar) (install)))
+   "Build and install the project locally."
+   []
+   (comp (pom) (aot :all true) (jar) (install)))
+
 
 (require '[boot-nifi.core :refer [nar-pom nar]])
 

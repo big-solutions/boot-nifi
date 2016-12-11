@@ -8,6 +8,11 @@
             [boot-mvn.core :refer [mvn]]
             [boot.util :as util]))
 
+(def template
+  (-> "template.nar.pom.xml"
+      io/resource
+      slurp))
+
 (defn str-replace
   "Replaces all occurences of pattern ${key} with the value of the appropriate key in the replacement map"
   [template m]
@@ -34,13 +39,7 @@
    (fn middleware [next-handler]
      (fn handler [fileset]
        (boot/empty-dir! tmp)
-       (let [template (->> fileset
-                           boot/input-files
-                           (boot/by-name ["template.nar.pom.xml"])
-                           first
-                           boot/tmp-file
-                           slurp)
-             nar-pom-contents (-> template
+       (let [nar-pom-contents (-> template
                                (str-replace {:group   group
                                              :id      id
                                              :version version}))
@@ -68,4 +67,5 @@
               :args (str "package install"))
          (sift :move {(re-pattern (str "target/" nar-path))
                       nar-path}
-               :include #{(re-pattern nar-path)}))))
+               :include #{#"target"}
+               :invert true))))
