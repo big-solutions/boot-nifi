@@ -2,37 +2,48 @@
   "Example tasks showing various approaches."
   {:boot/export-tasks true}
   (:require [boot.core :as boot :refer [deftask]]
+            [clojure.java.io :as io]
+            [clojure.string :as string]
             [boot.util :as util]))
 
-(deftask boot-nifi-simple
-  "I'm a simple task with only setup."
-  [A arg ARG str "the task argument"]
-  ;; merge environment etc
-  (println "Simple task setup:" arg)
-  identity)
+(defn str-replace
+  "Replaces all occurences of pattern ${key} with the value of the appropriate key in the replacement map"
+  [template m]
+  (if template
+    (reduce #(string/replace %
+                             (str "${" (name (first %2)) "}")
+                             (str (second %2)))
+            template
+            (into [] m))))
 
-(deftask boot-nifi-pre
-  "I'm a pre-wrap task."
-  []
-  ;; merge environment etc
-  (println "Pre-wrap task setup.")
-  (boot/with-pre-wrap fs
-    (println "Pre-wrap: Run functions on fs. Next task will run with our result.")
-    ;; return updated filesystem (boot/commit! updated-fs)
-    fs))
+(deftask nar
+ "Create nar file"
+ [P project PROJECT sym "project id (eg. foo/bar)"
+  V version VERSION str "project version"]
 
-(deftask boot-nifi-post
-  "I'm a post-wrap task."
-  []
-  ;; merge environment etc
-  (println "Post-wrap task setup.")
-  (boot/with-post-wrap fs
-    (println "Post-wrap: Next task will run. Then we will run functions on its result (fs).")))
+ (if-not project
+   (do (boot.util/fail "The P/project option is required!") (*usage*)))
+ (if-not version
+   (do (boot.util/fail "The V/version option is required!") (*usage*)))
 
-(deftask boot-nifi-pass-thru
-  "I'm a pass-thru task."
-  []
-  ;; merge environment etc
-  (println "Pass-thru task setup.")
-  (boot/with-pass-thru fs
-    (println "Pass-thru: Run functions on filesystem (fs). Next task will run with the same fs.")))
+ (let [tmp (boot/tmp-dir!)
+       id (name project)
+       group (or (namespace project) id)]
+   (fn middleware [next-handler]
+     (fn handler [fileset]
+       (boot/empty-dir! tmp)
+       (let [template (->> fileset
+                           boot/input-files
+                           (boot/by-name ["template.nar.pom.xml"])
+                           first
+                           boot/tmp-file
+                           slurp)
+             nar-pom-contents (-> template
+                               (str-replace {:group   group
+                                             :id      id
+                                             :version version}))
+             nar-pom-file (io/file tmp "pom.xml")]
+         (spit nar-pom-file nar-pom-contents))
+       (next-handler (-> fileset
+                         (boot/add-resource tmp)
+                         boot/commit!))))))
