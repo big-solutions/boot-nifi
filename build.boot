@@ -7,6 +7,7 @@
                             [big-solutions/boot-mvn "0.1.4"]
                             [org.apache.nifi/nifi-bootstrap "1.1.0"]
                             [org.apache.nifi/nifi-runtime "1.1.0"]
+                            [me.raynes/fs "1.4.6"]
                             [boot/core "2.6.0" :scope "test"]
                             [onetom/boot-lein-generate "0.1.3" :scope "test"]])
 
@@ -25,7 +26,7 @@
    (comp (pom) (aot :all true) (jar) (install)))
 
 
-(require '[boot-nifi.core :refer [nar-pom nar run-nifi]])
+(require '[boot-nifi.core :refer [nar-pom nar run-nifi download-nifi run-local-nifi]])
 
 (deftask idea
          "Updates project.clj for Idea to pick up dependency changes."

@@ -2,11 +2,13 @@
   "Example tasks showing various approaches."
   {:boot/export-tasks true}
   (:require [boot.core :as boot :refer [deftask]]
-            [boot.task.built-in :refer [sift]]
+            [boot.task.built-in :refer [sift target]]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [boot-mvn.core :refer [mvn]]
-            [boot.util :as util])
+            [boot.util :as util]
+            [me.raynes.fs :as fs]
+            [me.raynes.fs.compression :as compression])
   (:import (org.apache.nifi.bootstrap RunNiFi)))
 
 (def template
@@ -71,13 +73,44 @@
                :include #{#"target"}
                :invert true))))
 
+
+(deftask download-nifi
+   "Sets up NiFi locally in the project"
+   []
+   (let [tmp (boot/tmp-dir!)]
+     (fn middleware [next-handler]
+       (fn handler [fileset]
+         (util/info "Downloading NiFi...\n")
+         (boot/empty-dir! tmp)
+         (with-open [in (io/input-stream "/home/goran/projects/nifi.zip")
+                     out (io/output-stream (io/file tmp "nifi.zip"))]
+           (io/copy in out))
+         (compression/unzip (io/file tmp "nifi.zip") tmp)
+         (fs/copy-dir (io/file tmp "nifi-1.1.0")
+                      (io/file tmp "nifi-home"))
+         (next-handler (-> fileset
+                           (boot/add-resource tmp)
+                           boot/commit!))))))
+
 (deftask run-nifi
    "Runs a NiFi server"
    [H home HOME str "NiFi home directory"
     V verbose bool "Verbose"]
 
-   (let [conf-path (str home "/conf/bootstrap.conf")]
-     (println verbose)
-     (System/setProperty "org.apache.nifi.bootstrap.config.file" conf-path)
-     (future (-> (new RunNiFi (io/file conf-path) (boolean verbose))
-                 (.start)))))
+   (fn middleware [next-handler]
+     (fn handler [fileset]
+       (let [conf-path (str home "/conf/bootstrap.conf")]
+         (System/setProperty "org.apache.nifi.bootstrap.config.file" conf-path)
+         (future (-> (new RunNiFi (io/file conf-path) (boolean verbose))
+                     (.start))))
+       (next-handler fileset))))
+
+(deftask run-local-nifi
+  [V verbose bool "Verbose"]
+
+  (if (.exists (io/file "./nifi-home"))
+    (run-nifi :home "./nifi-home" :verbose verbose)
+    (comp (download-nifi)
+          (sift :include #{#"nifi-home"})
+          (target :dir #{"."} :no-clean true)
+          (run-nifi :home "./nifi-home" :verbose verbose))))
