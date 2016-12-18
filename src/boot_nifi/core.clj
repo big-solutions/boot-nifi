@@ -76,21 +76,24 @@
 
 (deftask download-nifi
    "Sets up NiFi locally in the project"
-   []
+   [F force bool "Forces the home directory to be overwritten"]
    (let [tmp (boot/tmp-dir!)]
-     (fn middleware [next-handler]
-       (fn handler [fileset]
-         (util/info "Downloading NiFi...\n")
-         (boot/empty-dir! tmp)
-         (with-open [in (io/input-stream "/home/goran/projects/nifi.zip")
-                     out (io/output-stream (io/file tmp "nifi.zip"))]
-           (io/copy in out))
-         (compression/unzip (io/file tmp "nifi.zip") tmp)
-         (fs/copy-dir (io/file tmp "nifi-1.1.0")
-                      (io/file tmp "nifi-home"))
-         (next-handler (-> fileset
-                           (boot/add-resource tmp)
-                           boot/commit!))))))
+     (comp (fn middleware [next-handler]
+             (fn handler [fileset]
+               (util/info "Downloading NiFi...\n")
+               (when (or force (not (.exists (io/file "./nifi-home"))))
+                     (boot/empty-dir! tmp)
+                     (with-open [in (io/input-stream "/home/goran/projects/nifi.zip")
+                                 out (io/output-stream (io/file tmp "nifi.zip"))]
+                       (io/copy in out))
+                     (compression/unzip (io/file tmp "nifi.zip") tmp)
+                     (fs/copy-dir (io/file tmp "nifi-1.1.0")
+                                  (io/file tmp "nifi-home")))
+               (next-handler (-> fileset
+                                 (boot/add-resource tmp)
+                                 boot/commit!))))
+           (sift :include #{#"nifi-home"})
+           (target :dir #{"."} :no-clean true))))
 
 (deftask run-nifi
    "Runs a NiFi server"
@@ -99,18 +102,9 @@
 
    (fn middleware [next-handler]
      (fn handler [fileset]
-       (let [conf-path (str home "/conf/bootstrap.conf")]
+       (let [conf-path (str (or home "./nifi-home") "/conf/bootstrap.conf")]
          (System/setProperty "org.apache.nifi.bootstrap.config.file" conf-path)
          (future (-> (new RunNiFi (io/file conf-path) (boolean verbose))
                      (.start))))
        (next-handler fileset))))
 
-(deftask run-local-nifi
-  [V verbose bool "Verbose"]
-
-  (if (.exists (io/file "./nifi-home"))
-    (run-nifi :home "./nifi-home" :verbose verbose)
-    (comp (download-nifi)
-          (sift :include #{#"nifi-home"})
-          (target :dir #{"."} :no-clean true)
-          (run-nifi :home "./nifi-home" :verbose verbose))))

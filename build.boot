@@ -26,7 +26,7 @@
    (comp (pom) (aot :all true) (jar) (install)))
 
 
-(require '[boot-nifi.core :refer [nar-pom nar run-nifi download-nifi run-local-nifi]])
+(require '[boot-nifi.core :refer [nar-pom nar run-nifi download-nifi]])
 
 (deftask idea
          "Updates project.clj for Idea to pick up dependency changes."
