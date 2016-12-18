@@ -6,7 +6,8 @@
             [clojure.java.io :as io]
             [clojure.string :as string]
             [boot-mvn.core :refer [mvn]]
-            [boot.util :as util]))
+            [boot.util :as util])
+  (:import (org.apache.nifi.bootstrap RunNiFi)))
 
 (def template
   (-> "template.nar.pom.xml"
@@ -69,3 +70,14 @@
                       nar-path}
                :include #{#"target"}
                :invert true))))
+
+(deftask run-nifi
+   "Runs a NiFi server"
+   [H home HOME str "NiFi home directory"
+    V verbose bool "Verbose"]
+
+   (let [conf-path (str home "/conf/bootstrap.conf")]
+     (println verbose)
+     (System/setProperty "org.apache.nifi.bootstrap.config.file" conf-path)
+     (future (-> (new RunNiFi (io/file conf-path) (boolean verbose))
+                 (.start)))))
