@@ -4,7 +4,7 @@
 (set-env! :source-paths #{"src"}
           :resource-paths #{"resources"}
           :dependencies   '[[org.clojure/clojure "1.7.0"]
-                            [big-solutions/boot-mvn "0.1.4"]
+                            [big-solutions/boot-mvn "0.1.5s"]
                             [org.apache.nifi/nifi-bootstrap "1.1.0"]
                             [org.apache.nifi/nifi-runtime "1.1.0"]
                             [me.raynes/fs "1.4.6"]
