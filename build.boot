@@ -1,5 +1,5 @@
 (def project 'big-solutions/boot-nifi)
-(def version "0.1.1-SNAPSHOT")
+(def version "0.1.0")
 
 (set-env! :source-paths #{"src"}
           :resource-paths #{"resources"}
