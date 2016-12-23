@@ -76,7 +76,7 @@
 
 (deftask download-nifi
    "Sets up NiFi locally in the project"
-   [F force bool "Forces the home directory to be overwritten"]
+   [F force bool "Forces the nifi-home directory to be overwritten"]
    (let [tmp (boot/tmp-dir!)]
      (comp (fn middleware [next-handler]
              (fn handler [fileset]
