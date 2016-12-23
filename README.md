@@ -91,8 +91,8 @@ Depending on your workflow you may define project specific tasks that wrap these
 
 ## See also
 
-- [clj-nifi](https:/github.com/big-solutions/clj-nifi) - a Clojure DSL for Apache NiFi
-- [clj-nifi-bundle] (https:/github.com/big-solutions/clj-nifi) - Boot template for clj-nifi projects
+- [clj-nifi](https://github.com/big-solutions/clj-nifi) - a Clojure DSL for Apache NiFi
+- [clj-nifi-bundle] (https://github.com/big-solutions/clj-nifi) - Boot template for clj-nifi projects
 
 ## License
 
