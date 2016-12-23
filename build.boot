@@ -27,10 +27,3 @@
 
 
 (require '[boot-nifi.core :refer [nar-pom nar run-nifi download-nifi]])
-
-(deftask idea
-         "Updates project.clj for Idea to pick up dependency changes."
-         []
-         (require 'boot.lein)
-         (let [runner (resolve 'boot.lein/generate)]
-           (runner)))
