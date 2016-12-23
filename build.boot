@@ -8,8 +8,7 @@
                             [org.apache.nifi/nifi-bootstrap "1.1.0"]
                             [org.apache.nifi/nifi-runtime "1.1.0"]
                             [me.raynes/fs "1.4.6"]
-                            [boot/core "2.6.0" :scope "test"]
-                            [onetom/boot-lein-generate "0.1.3" :scope "test"]])
+                            [boot/core "2.6.0" :scope "test"]])
 
 (task-options!
  pom {:project     project
